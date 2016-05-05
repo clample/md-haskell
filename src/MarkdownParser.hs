@@ -1,5 +1,6 @@
 module MarkdownParser
-       ( parseMarkdown
+       (
+         parseMarkdown
        ) where
 
 parseMarkdown :: String -> String

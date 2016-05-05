@@ -2,7 +2,7 @@ module Main where
 
 import System.IO
 import System.Directory
-import Lib
+import MarkdownParser
 
 main :: IO ()
 main = do

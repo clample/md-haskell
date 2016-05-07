@@ -12,4 +12,5 @@ tests = [
       ]
   ]
 
+prop_identity :: String -> Bool
 prop_identity str = parseMarkdown str == str

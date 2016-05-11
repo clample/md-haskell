@@ -3,6 +3,7 @@ module MarkdownParser where
 import Data.List
 import Data.Int
 import Html
+import Data.Char (isSpace)
 
 data ParseState = ParseState {
                                string :: String
@@ -74,6 +75,12 @@ assert False err = bail err
 
 parseHeader :: Parse Header
 parseHeader = ((length) <$> (parseWhile (\c -> c == '#'))) ==>
-              \ordnl -> parseWhile (\c -> c /= '\n') ==>
+              \ordnl -> skipSpaces ==>&
+              parseWhile (\c -> c /= '\n') ==>
               \txt -> identity (Header { text = txt, ordinal = ordnl })
 
+(==>&) :: Parse a -> Parse b -> Parse b
+p ==>& f = p ==> \_ -> f
+
+skipSpaces :: Parse ()
+skipSpaces = parseWhile isSpace ==>& identity ()

@@ -71,3 +71,9 @@ parseWhile p = (fmap p <$> peekChar) ==> \mp ->
 assert :: Bool -> String -> Parse ()
 assert True _ = identity ()
 assert False err = bail err
+
+parseHeader :: Parse Header
+parseHeader = ((length) <$> (parseWhile (\c -> c == '#'))) ==>
+              \ordnl -> parseWhile (\c -> c /= '\n') ==>
+              \txt -> identity (Header { text = txt, ordinal = ordnl })
+

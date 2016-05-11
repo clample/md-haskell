@@ -10,8 +10,8 @@ module Html
        , Img(..)
        ) where
 
-data Html = Html [HtmlTag]
-data HtmlTag = HtmlTag { render :: String }
+type Html = [HtmlTag]
+data HtmlTag = HtmlTag { render :: String } deriving (Show)
 data Header = Header { text :: String, ordinal :: Int }
 data P = P String
 data A = A { linkUrl :: String, linkText :: String }

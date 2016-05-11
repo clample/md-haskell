@@ -8,5 +8,5 @@ main :: IO ()
 main = do
   handle <- openFile "src/sample-markdown.md" ReadMode
   contents <- hGetContents handle
-  putStr $ prettyPrint $ parseMarkdown contents
+  putStr "Good"
   hClose handle

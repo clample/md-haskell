@@ -1,15 +1,73 @@
-module MarkdownParser
-       (
-         parseMarkdown
-       , prettyPrint
-       ) where
+module MarkdownParser where
 
 import Data.List
+import Data.Int
 import Html
 
-parseMarkdown :: String -> Html
-parseMarkdown _ = Html []
+data ParseState = ParseState {
+                               string :: String
+                             , offset :: Int64
+                             } deriving (Show)
 
-prettyPrint :: Html -> String
-prettyPrint _ = ""
+modifyOffset :: ParseState -> Int64 -> ParseState
+modifyOffset initState newOffset = initState { offset = newOffset }
 
+newtype Parse a = Parse {
+                        runParse :: ParseState -> Either String (a, ParseState)
+                        }
+
+instance Functor Parse where
+  fmap f parser = parser ==> \result ->
+    identity (f result)
+
+parse :: Parse a -> String -> Either String a
+parse parser initState = case runParse parser (ParseState initState 0) of
+  Left err -> Left err
+  Right (result, _) -> Right result
+
+(==>) :: Parse a -> (a -> Parse b) -> Parse b
+firstParser ==> secondParser = Parse chainedParser
+  where chainedParser initState =
+          case runParse firstParser initState of
+            Left errMessage -> Left errMessage
+            Right (firstResult, newState) ->
+              runParse (secondParser firstResult) newState
+
+identity :: a -> Parse a
+identity a = Parse (\s -> Right (a, s))
+
+getState :: Parse ParseState
+getState = Parse (\s -> Right (s, s))
+
+putState :: ParseState -> Parse ()
+putState s = Parse (\_ -> Right ((), s))
+
+bail :: String -> Parse a
+bail err = Parse $ \s -> Left $ "byte offset " ++ show (offset s) ++ ": " ++ err
+
+parseChar :: Parse Char
+parseChar =
+  getState ==> \initState ->
+  case (string initState) of
+    [] -> bail "no more input"
+    (c:str) ->
+        putState newState ==> \_ ->
+        identity c
+        where newState = initState { string = str, offset = newOffset }
+              newOffset = offset initState + 1
+
+peekChar :: Parse (Maybe Char)
+peekChar = (firstChar . string) <$> getState
+  where firstChar (c:str) = Just c
+        firstChar [] = Nothing
+
+parseWhile :: (Char -> Bool) -> Parse String
+parseWhile p = (fmap p <$> peekChar) ==> \mp ->
+  if mp == Just True
+     then parseChar ==>
+          \c -> (c:) <$> parseWhile p
+  else identity []
+
+assert :: Bool -> String -> Parse ()
+assert True _ = identity ()
+assert False err = bail err

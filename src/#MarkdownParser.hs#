@@ -90,6 +90,8 @@ parseLink = skipBracket ==>&
             where skipBracket = parseChar
                   skipParenthesis = parseChar
 
+
+
 (==>&) :: Parse a -> Parse b -> Parse b
 p ==>& f = p ==> \_ -> f
 

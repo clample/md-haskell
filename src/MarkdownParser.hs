@@ -55,3 +55,14 @@ parseUnorderedListElement = skipSpecialChar ==>&
                             where skipSpecialChar = parseChar
                                   skipSpace = parseChar
                                   skipNewline = skipCharIfItExists
+
+parseParagraph :: Parse P
+parseParagraph = parseWhile (\c -> c /= '\n') ==>
+                 \content -> skipCharIfItExists ==>&
+                 peekChar ==>
+                 \maybeChar -> case maybeChar of
+                               Just '\n' -> skipCharIfItExists ==>&
+                                            identity (P content)
+                               Just _ -> parseParagraph ==>
+                                         \(P moreContent) -> identity (P (content ++ moreContent))
+                               Nothing -> identity (P content)

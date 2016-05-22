@@ -103,6 +103,28 @@ parseImage = skipExclamation ==>&
                    skipParenthesis = parseChar
                    skipBracket = parseChar
 
+parseUnorderedList :: Parse Ul
+parseUnorderedList = peekChar ==>
+                     \maybeChar -> step maybeChar
+                     where step maybeChar = case maybeChar of Just char -> parseUnorderedListStep char
+                                                              Nothing -> identity (Ul [])
+
+parseUnorderedListStep :: Char -> Parse Ul
+parseUnorderedListStep '*' = parseUnorderedListElement ==>
+                              \li -> parseUnorderedList ==>
+                              \(Ul ul) -> identity (Ul (li:ul))
+parseunorderedListStep _ = identity (Ul [])
+
+parseUnorderedListElement :: Parse Li
+parseUnorderedListElement = skipSpecialChar ==>&
+                            skipSpace ==>&
+                            parseWhile (\c -> c /= '\n') ==>
+                            \content -> skipNewline ==>&
+                            identity (Li content)
+                            where skipSpecialChar = parseChar
+                                  skipSpace = parseChar
+                                  skipNewline = parseChar
+
 (==>&) :: Parse a -> Parse b -> Parse b
 p ==>& f = p ==> \_ -> f
 

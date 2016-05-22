@@ -11,7 +11,8 @@ parseHeader :: Parse Header
 parseHeader = ((length) <$> (parseWhile (\c -> c == '#'))) ==>
               \ordnl -> skipSpaces ==>&
               parseWhile (\c -> c /= '\n') ==>
-              \txt -> identity (Header { text = txt, ordinal = ordnl })
+              \txt -> skipCharIfItExists ==>&
+              identity (Header { text = txt, ordinal = ordnl })
 
 parseLink :: Parse A
 parseLink = skipBracket ==>&
@@ -66,3 +67,17 @@ parseParagraph = parseWhile (\c -> c /= '\n') ==>
                                Just _ -> parseParagraph ==>
                                          \(P moreContent) -> identity (P (content ++ moreContent))
                                Nothing -> identity (P content)
+
+parseMarkdown :: Parse Html
+parseMarkdown = peekChar ==>
+                \maybeChar -> case maybeChar of
+                              Nothing -> identity []
+                              Just char -> dispatchToParser char ==>
+                                           \htmlTag -> parseMarkdown ==>
+                                           \html -> identity (htmlTag:html)
+                              
+dispatchToParser :: Char -> Parse HtmlTag
+dispatchToParser '#' = parseHeader ==>
+                       \headerTag -> identity (headerToHtml headerTag)
+dispatchToParser _ = parseParagraph ==>
+                     \paragraphTag -> identity (pToHtml paragraphTag)

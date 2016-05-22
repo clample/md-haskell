@@ -84,11 +84,24 @@ parseLink = skipBracket ==>&
             parseWhile (\c -> c /= ']') ==>
             \linkText -> skipBracket ==>&
             skipParenthesis ==>&
-            parseWhile (\c -> c/= ')') ==>
+            parseWhile (\c -> c /= ')') ==>
             \linkUrl -> skipParenthesis ==>&
             identity (A { linkUrl = linkUrl, linkText = linkText })
             where skipBracket = parseChar
                   skipParenthesis = parseChar
+
+parseImage :: Parse Img
+parseImage = skipExclamation ==>&
+             skipBracket ==>&
+             parseWhile (\c -> c /= ']') ==>
+             \altText -> skipBracket ==>&
+             skipParenthesis ==>&
+             parseWhile (\c -> c /= ')') ==>
+             \imgUrl -> skipParenthesis ==>&
+             identity (Img { altText = altText, imgUrl = imgUrl })
+             where skipExclamation = parseChar
+                   skipParenthesis = parseChar
+                   skipBracket = parseChar
 
 (==>&) :: Parse a -> Parse b -> Parse b
 p ==>& f = p ==> \_ -> f

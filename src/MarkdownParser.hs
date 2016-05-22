@@ -105,15 +105,12 @@ parseImage = skipExclamation ==>&
 
 parseUnorderedList :: Parse Ul
 parseUnorderedList = peekChar ==>
-                     \maybeChar -> step maybeChar
-                     where step maybeChar = case maybeChar of Just char -> parseUnorderedListStep char
-                                                              Nothing -> identity (Ul [])
-
-parseUnorderedListStep :: Char -> Parse Ul
-parseUnorderedListStep '*' = parseUnorderedListElement ==>
-                              \li -> parseUnorderedList ==>
-                              \(Ul ul) -> identity (Ul (li:ul))
-parseunorderedListStep _ = identity (Ul [])
+                     \maybeChar -> case maybeChar of
+                                   Just '*' -> parseUnorderedListElement ==>
+                                               \li -> parseUnorderedList ==>
+                                               \(Ul ul) -> identity (Ul (li:ul))
+                                   Just _ -> identity (Ul [])
+                                   Nothing -> identity (Ul [])
 
 parseUnorderedListElement :: Parse Li
 parseUnorderedListElement = skipSpecialChar ==>&
@@ -123,7 +120,13 @@ parseUnorderedListElement = skipSpecialChar ==>&
                             identity (Li content)
                             where skipSpecialChar = parseChar
                                   skipSpace = parseChar
-                                  skipNewline = parseChar
+                                  skipNewline = skipCharIfItExists
+
+skipCharIfItExists :: Parse ()
+skipCharIfItExists = peekChar ==>
+                      \maybeChar -> case maybeChar of Just char -> skipChar
+                                                      Nothing -> identity ()
+                                    where skipChar = parseChar ==>& identity ()
 
 (==>&) :: Parse a -> Parse b -> Parse b
 p ==>& f = p ==> \_ -> f

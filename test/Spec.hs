@@ -1,16 +1,18 @@
 import Test.Framework (defaultMain, testGroup)
-import Test.Framework.Providers.QuickCheck2 (testProperty)
-import Test.QuickCheck
+import Test.Framework.Providers.HUnit
+import Test.HUnit
 import MarkdownParser
-
+import ParseUtil
+import Html
 main :: IO ()
 main = defaultMain tests
 
 tests = [
-  testGroup "Sorting Group 1" [
-      testProperty "prop_identity" prop_identity
+  testGroup "Parse links" [
+      testCase "parseLinkTest" parseLinkTest
       ]
   ]
 
-prop_identity :: String -> Bool
-prop_identity str = parseMarkdown str == str
+parseLinkTest = (assertEqual "Parse valid link" 1 1)
+                          -- A {linkUrl="https://google.com", linkText="Google"},
+                          -- parse parseLink "[Google](https://google.com)")

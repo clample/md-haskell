@@ -2,13 +2,13 @@ module Html where
 
 type Html = [HtmlTag]
 data HtmlTag = HtmlTag { render :: String } deriving (Show)
-data Header = Header { text :: String, ordinal :: Int } deriving (Show)
-data P = P String deriving (Show)
-data A = A { linkUrl :: String, linkText :: String } deriving (Show)
-data Ul= Ul [Li] deriving (Show)
-data Ol= Ol [Li] deriving (Show)
-data Li = Li String deriving (Show)
-data Img = Img { altText :: String, imgUrl :: String } deriving (Show)
+data Header = Header { text :: String, ordinal :: Int } deriving (Show, Eq)
+data P = P String deriving (Show, Eq)
+data A = A { linkUrl :: String, linkText :: String } deriving (Show, Eq)
+data Ul= Ul [Li] deriving (Show, Eq)
+data Ol= Ol [Li] deriving (Show, Eq)
+data Li = Li String deriving (Show, Eq)
+data Img = Img { altText :: String, imgUrl :: String } deriving (Show, Eq)
 
 headerToHtml :: Header -> HtmlTag
 headerToHtml header = HtmlTag { render = "<h1>" ++ (text header) ++ "</h1>" }

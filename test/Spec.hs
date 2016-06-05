@@ -14,6 +14,16 @@ tests = [
   testGroup "Parse headers" [
       testCase "parseHeaderTest" parseHeaderTest,
       testCase "parseCorrectHeaderOrdinal" parseCorrectHeaderOrdinalTest
+      ],
+  testGroup "Parse Images" [
+      testCase "parseImageTest" parseImageTest
+      ],
+  testGroup "Parse unordered lists" [
+      testCase "parseUnorderedListTest" parseUnorderedListTest
+      ],
+  testGroup "Parse paragraphs" [
+      testCase "parseParagraphTest" parseParagraphTest,
+      testCase "parseParagraphWithBreakTest" parseParagraphWithBreakTest
       ]
   ]
 
@@ -31,4 +41,22 @@ parseCorrectHeaderOrdinalTest = ( assertEqual "Parse correct header ordinal"
 
 parseImageTest = ( assertEqual "Parse image"
                    ( "<img src=\"https://my.image.com\" alt=\"image\">")
-                   ( parseAndRenderHtml parseImage "![image](htts://my.image.com)" ))
+                   ( parseAndRenderHtml parseImage "![image](https://my.image.com)" ))
+
+parseUnorderedListTest = ( assertEqual "Parse unordered list"
+                           ( "<ul><li>First</li><li>Second</li></ul>")
+                           ( parseAndRenderHtml parseUnorderedList
+                             "* First\n* Second"))
+
+parseParagraphTest = ( assertEqual "Parse paragraph"
+                       ("<p>This is some great content</p>")
+                       ( parseAndRenderHtml parseParagraph
+                         "This is some great content"))
+
+parseParagraphWithBreakTest = ( assertEqual "Parse paragraph with break"
+                                ("<p>Some stuff<br>and more stuff</p>")
+                                (parseAndRenderHtml parseParagraph
+                                 "Some stuff\nand more stuff"))
+
+
+                       

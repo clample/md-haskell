@@ -34,7 +34,7 @@ liTag = Tag {
 pTag :: Tag
 pTag = Tag {
              renderOpen = "<p>",
-             renderClose = "</li>"
+             renderClose = "</p>"
            }
 
 ulTag :: Tag

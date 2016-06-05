@@ -66,7 +66,7 @@ parseParagraph = parseWhile (\c -> c /= '\n') ==>
                                Just '\n' -> skipCharIfItExists ==>&
                                             identity (Node pTag ((Content {render = content }):[]))
                                Just _ -> parseParagraph ==>
-                                         \(Node tag ((contentTag):contentTags)) -> identity (Node pTag ((Content { render = (content ++ (render contentTag)) }):[]))
+                                         \(Node tag ((contentTag):contentTags)) -> identity (Node pTag ((Content { render = (content ++ "<br>" ++ (render contentTag)) }):[]))
                                Nothing -> identity (Node pTag ((Content { render = content }):[]))
 
 parseMarkdown :: Parse Html

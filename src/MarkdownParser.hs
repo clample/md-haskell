@@ -12,7 +12,7 @@ parseHeader = ((length) <$> (parseWhile (\c -> c == '#'))) ==>
               \ordinal -> skipSpaces ==>&
               parseWhile (\c -> c /= '\n') ==>
               \txt -> skipCharIfItExists ==>&
-              identity (Node (hTag ordinal) ((Content (ContentTag { render = txt })):[]))
+              identity (Node (hTag ordinal) ((Content { render = txt }):[]))
 
 parseLink :: Parse Html
 parseLink = skipBracket ==>&
@@ -21,7 +21,7 @@ parseLink = skipBracket ==>&
             skipParenthesis ==>&
             parseWhile (\c -> c /= ')') ==>
             \linkUrl -> skipParenthesis ==>&
-            identity (Node (aTag linkUrl) ((Content (ContentTag { render = linkText })):[]))
+            identity (Node (aTag linkUrl) ((Content { render = linkText }):[]))
             where skipBracket = parseChar
                   skipParenthesis = parseChar
 
@@ -33,7 +33,7 @@ parseImage = skipExclamation ==>&
              skipParenthesis ==>&
              parseWhile (\c -> c /= ')') ==>
              \imgUrl -> skipParenthesis ==>&
-             identity (Content (imgContentTag altText imgUrl))
+             identity ((imgContent altText imgUrl))
              where skipExclamation = parseChar
                    skipParenthesis = parseChar
                    skipBracket = parseChar
@@ -53,7 +53,7 @@ parseUnorderedListElement = skipSpecialChar ==>&
                             skipSpace ==>&
                             parseWhile (\c -> c /= '\n') ==>
                             \content -> skipNewline ==>&
-                            identity (Node liTag ( (Content (ContentTag {render = content})):[]) )
+                            identity (Node liTag ((Content {render = content}):[]) )
                             where skipSpecialChar = parseChar
                                   skipSpace = parseChar
                                   skipNewline = skipCharIfItExists
@@ -64,15 +64,15 @@ parseParagraph = parseWhile (\c -> c /= '\n') ==>
                  peekChar ==>
                  \maybeChar -> case maybeChar of
                                Just '\n' -> skipCharIfItExists ==>&
-                                            identity (Node pTag ((Content (ContentTag {render = content })):[]))
+                                            identity (Node pTag ((Content {render = content }):[]))
                                Just _ -> parseParagraph ==>
-                                         \(Node tag ((Content contentTag):contentTags)) -> identity (Node pTag ((Content ( ContentTag { render = (content ++ (render contentTag)) })):[]))
-                               Nothing -> identity (Node pTag ((Content (ContentTag { render = content })):[]))
+                                         \(Node tag ((contentTag):contentTags)) -> identity (Node pTag ((Content { render = (content ++ (render contentTag)) }):[]))
+                               Nothing -> identity (Node pTag ((Content { render = content }):[]))
 
 parseMarkdown :: Parse Html
 parseMarkdown = peekChar ==>
                 \maybeChar -> case maybeChar of
-                              Nothing -> identity (Content (ContentTag  {render = ""} ))
+                              Nothing -> identity (Content {render = ""})
                               Just char -> dispatchToParser char ==>
                                            \htmlBlock -> parseMarkdown ==>
                                            \(Node tag html) -> identity (Node (Tag {renderOpen="", renderClose=""}) (htmlBlock:html))

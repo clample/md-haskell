@@ -76,9 +76,15 @@ parseMarkdown = peekChar ==>
                               Just char -> dispatchToParser char ==>
                                            \htmlBlock -> parseMarkdown ==>
                                            \(Node tag html) -> identity (Node (Tag {renderOpen="", renderClose=""}) (htmlBlock:html))
-                              
+                             
+
 dispatchToParser :: Char -> Parse Html
 dispatchToParser '#' = parseHeader ==>
                        \headerTag -> identity (headerTag)
 dispatchToParser _ = parseParagraph ==>
                      \paragraphTag -> identity (paragraphTag)
+
+parseAndRenderHtml :: Parse Html -> (String -> String)
+parseAndRenderHtml parseHtml = render . parse parseHtml
+  where render (Right html) = renderHtml html
+        render (Left err) = err

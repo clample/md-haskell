@@ -3,10 +3,17 @@ module Html where
 data Html = Content {render :: String} | Node Tag [Html] deriving (Show, Eq)
 data Tag = Tag { renderOpen :: String, renderClose :: String } deriving (Show, Eq)
 
+renderHtml :: Html -> String
+renderHtml (Content {render = content }) = content
+renderHtml (Node (Tag {renderOpen = open, renderClose = close}) htmlArr) =
+  open ++ (renderHtmlArray htmlArr) ++ close
+  where renderHtmlArray (html:htmlArr) = (renderHtml html) ++ (renderHtmlArray htmlArr)
+        renderHtmlArray [] = ""
+
 hTag :: Int -> Tag
 hTag ordinal = Tag {
                      renderOpen = "<h" ++ (show ordinal) ++ ">",
-                     renderClose = "<h" ++ (show ordinal) ++ "/>"
+                     renderClose = "</h" ++ (show ordinal) ++ ">"
                    }
 
 aTag :: String -> Tag

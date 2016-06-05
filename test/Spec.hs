@@ -18,17 +18,17 @@ tests = [
   ]
 
 parseLinkTest = ( assertEqual "Parse valid link"
-                  ( Right A {linkUrl="https://google.com", linkText="Google"} )
-                  ( parse parseLink "[Google](https://google.com)" ))
+                  ( "<a href=\"https://google.com\">Google</a>" )
+                  ( parseAndRenderHtml parseLink "[Google](https://google.com)" ))
 
 parseHeaderTest = ( assertEqual "Parse valid header"
-                    ( Right Header { text="header", ordinal=1 })
-                    ( parse parseHeader "# header" ))
+                    ( "<h1>header</h1>" )
+                    ( parseAndRenderHtml parseHeader "# header" ))
 
 parseCorrectHeaderOrdinalTest = ( assertEqual "Parse correct header ordinal"
-                                  ( Right Header { text="header", ordinal=3 })
-                                  ( parse parseHeader "### header" ))
+                                  ( "<h3>header</h3>" )
+                                  ( parseAndRenderHtml parseHeader "### header" ))
 
 parseImageTest = ( assertEqual "Parse image"
-                   ( Right Img { altText="image", imgUrl="https://my.image.com" })
-                   ( parse parseImage "![image](htts://my.image.com)" ))
+                   ( "<img src=\"https://my.image.com\" alt=\"image\">")
+                   ( parseAndRenderHtml parseImage "![image](htts://my.image.com)" ))

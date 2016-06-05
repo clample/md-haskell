@@ -24,6 +24,11 @@ tests = [
   testGroup "Parse paragraphs" [
       testCase "parseParagraphTest" parseParagraphTest,
       testCase "parseParagraphWithBreakTest" parseParagraphWithBreakTest
+      ],
+  testGroup "Parse block elements with inline elements inside" [
+      testCase "parseHeaderWithLinkTest" parseHeaderWithLinkTest,
+      testCase "parseUnorderedListWithLinksTest" parseUnorderedListWithLinksTest,
+      testCase "parseParagraphWithLinkTest" parseParagraphWithLinkTest
       ]
   ]
 
@@ -58,5 +63,19 @@ parseParagraphWithBreakTest = ( assertEqual "Parse paragraph with break"
                                 (parseAndRenderHtml parseParagraph
                                  "Some stuff\nand more stuff"))
 
+parseHeaderWithLinkTest = ( assertEqual "Parse Header with link"
+                            ( "<h1><a href=\"https://google.com\">Google</a></h1>")
+                            ( parseAndRenderHtml parseMarkdown
+                              "# [Google](https://google.com)"))
 
-                       
+
+parseUnorderedListWithLinksTest = ( assertEqual "Parse unordered list with links"
+                                    ( "<ul><li><a href=\"https://clample.com\">Google</a></li>Other content<li></li><ul>")
+                                    ( parseAndRenderHtml parseMarkdown
+                                      "* [Google](https://clample.com)\n* Other content"))
+
+parseParagraphWithLinkTest = ( assertEqual "Parse paragraph with link"
+                               ("<p>Check out the website <a href=\"https://google.com\">Google</a> and click</p>")
+                               ( parseAndRenderHtml parseMarkdown
+                                 "Check out the website [Google](https://google.com) and click"))
+

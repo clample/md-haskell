@@ -4,6 +4,7 @@ import Data.List
 import Data.Int
 import Data.Char (isSpace)
 import Control.Monad
+import Control.Monad.Trans
 
 data ParseState = ParseState {
                                string :: String
@@ -59,6 +60,9 @@ instance (Monad m) => Monad (MaybeT m) where
   return = pure
   (>>=) = bindMT
   fail = failMT
+
+instance MonadTrans MaybeT where
+  lift m = MaybeT (Just `liftM` m)
 
 parse :: Parse a -> String -> Either String a
 parse parser initState = case runParse parser (ParseState initState 0) of

@@ -3,6 +3,7 @@ module ParseUtil where
 import Data.List
 import Data.Int
 import Data.Char (isSpace)
+import Control.Monad
 
 data ParseState = ParseState {
                                string :: String
@@ -17,8 +18,17 @@ newtype Parse a = Parse {
                         }
 
 instance Functor Parse where
-  fmap f parser = parser ==> \result ->
-    identity (f result)
+  fmap = liftM
+
+instance Applicative Parse where
+  pure = identity
+  (<*>) = ap
+    
+instance Monad Parse where
+  return = pure
+  (>>) = (*>)
+  (>>=) = (==>)
+  fail = bail
 
 parse :: Parse a -> String -> Either String a
 parse parser initState = case runParse parser (ParseState initState 0) of

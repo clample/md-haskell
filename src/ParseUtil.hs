@@ -30,6 +30,36 @@ instance Monad Parse where
   (>>=) = (==>)
   fail = bail
 
+newtype MaybeT m a = MaybeT {
+                            runMaybeT :: m (Maybe a)
+                            }
+
+bindMT :: (Monad m) => MaybeT m a -> (a -> MaybeT m b) -> MaybeT m b
+x `bindMT` f = MaybeT $ do
+  unwrapped <- runMaybeT x
+  case unwrapped of
+    Nothing -> return Nothing
+    Just y -> runMaybeT (f y)
+
+returnMT :: (Monad m) => a -> MaybeT m a
+returnMT a = MaybeT $ return (Just a)
+
+failMT :: (Monad m) => t -> MaybeT m a
+failMT _ = MaybeT $ return Nothing
+
+
+instance (Monad m) => Functor (MaybeT m) where
+  fmap = liftM
+
+instance (Monad m) => Applicative (MaybeT m) where
+  pure = returnMT
+  (<*>) = ap
+  
+instance (Monad m) => Monad (MaybeT m) where
+  return = pure
+  (>>=) = bindMT
+  fail = failMT
+
 parse :: Parse a -> String -> Either String a
 parse parser initState = case runParse parser (ParseState initState 0) of
   Left err -> Left err

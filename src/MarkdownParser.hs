@@ -8,18 +8,18 @@ import ParseUtil
 
 
 parseHeader :: Parse Html
-parseHeader = ((length) <$> (parseWhile (\c -> c == '#'))) ==>
+parseHeader = ((length) <$> (parseWhile (\c -> c == '#'))) >>=
               \ordinal -> skipSpaces >>
-              parseWhile (\c -> c /= '\n') ==>
+              parseWhile (\c -> c /= '\n') >>=
               \txt -> skipCharIfItExists >>
               identity (Node (hTag ordinal) ((Content { render = txt }):[]))
 
 parseLink :: Parse Html
 parseLink = skipBracket >>
-            parseWhile (\c -> c /= ']') ==>
+            parseWhile (\c -> c /= ']') >>=
             \linkText -> skipBracket >>
             skipParenthesis >>
-            parseWhile (\c -> c /= ')') ==>
+            parseWhile (\c -> c /= ')') >>=
             \linkUrl -> skipParenthesis >>
             identity (Node (aTag linkUrl) ((Content { render = linkText }):[]))
             where skipBracket = parseChar
@@ -28,10 +28,10 @@ parseLink = skipBracket >>
 parseImage :: Parse Html
 parseImage = skipExclamation >>
              skipBracket >>
-             parseWhile (\c -> c /= ']') ==>
+             parseWhile (\c -> c /= ']') >>=
              \altText -> skipBracket >>
              skipParenthesis >>
-             parseWhile (\c -> c /= ')') ==>
+             parseWhile (\c -> c /= ')') >>=
              \imgUrl -> skipParenthesis >>
              identity ((imgContent altText imgUrl))
              where skipExclamation = parseChar
@@ -39,10 +39,10 @@ parseImage = skipExclamation >>
                    skipBracket = parseChar
 
 parseUnorderedList :: Parse Html
-parseUnorderedList = peekChar ==>
+parseUnorderedList = peekChar >>=
                      \maybeChar -> case maybeChar of
-                                   Just '*' -> parseUnorderedListElement ==>
-                                               \li -> parseUnorderedList ==>
+                                   Just '*' -> parseUnorderedListElement >>=
+                                               \li -> parseUnorderedList >>=
                                                \(Node tag ul) -> identity (Node ulTag (li:ul))
                                    Just _ -> identity (Node ulTag [])
                                    Nothing -> identity (Node ulTag [])
@@ -51,7 +51,7 @@ parseUnorderedList = peekChar ==>
 parseUnorderedListElement :: Parse Html
 parseUnorderedListElement = skipSpecialChar >>
                             skipSpace >>
-                            parseWhile (\c -> c /= '\n') ==>
+                            parseWhile (\c -> c /= '\n') >>=
                             \content -> skipNewline >>
                             identity (Node liTag ((Content {render = content}):[]) )
                             where skipSpecialChar = parseChar
@@ -59,29 +59,29 @@ parseUnorderedListElement = skipSpecialChar >>
                                   skipNewline = skipCharIfItExists
 
 parseParagraph :: Parse Html
-parseParagraph = parseWhile (\c -> c /= '\n') ==>
+parseParagraph = parseWhile (\c -> c /= '\n') >>=
                  \content -> skipCharIfItExists >>
-                 peekChar ==>
+                 peekChar >>=
                  \maybeChar -> case maybeChar of
                                Just '\n' -> skipCharIfItExists >>
                                             identity (Node pTag ((Content {render = content }):[]))
-                               Just _ -> parseParagraph ==>
+                               Just _ -> parseParagraph >>=
                                          \(Node tag ((contentTag):contentTags)) -> identity (Node pTag ((Content { render = (content ++ "<br>" ++ (render contentTag)) }):[]))
                                Nothing -> identity (Node pTag ((Content { render = content }):[]))
 
 parseMarkdown :: Parse Html
-parseMarkdown = peekChar ==>
+parseMarkdown = peekChar >>=
                 \maybeChar -> case maybeChar of
                               Nothing -> identity (Content {render = ""})
-                              Just char -> dispatchToParser char ==>
-                                           \htmlBlock -> parseMarkdown ==>
+                              Just char -> dispatchToParser char >>=
+                                           \htmlBlock -> parseMarkdown >>=
                                            \(Node tag html) -> identity (Node (Tag {renderOpen="", renderClose=""}) (htmlBlock:html))
                              
 
 dispatchToParser :: Char -> Parse Html
-dispatchToParser '#' = parseHeader ==>
+dispatchToParser '#' = parseHeader >>=
                        \headerTag -> identity (headerTag)
-dispatchToParser _ = parseParagraph ==>
+dispatchToParser _ = parseParagraph >>=
                      \paragraphTag -> identity (paragraphTag)
 
 parseAndRenderHtml :: Parse Html -> (String -> String)

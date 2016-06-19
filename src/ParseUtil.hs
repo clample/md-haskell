@@ -57,11 +57,11 @@ bail err = Parse $ \s -> Left $ "byte offset " ++ show (offset s) ++ ": " ++ err
 
 parseChar :: Parse Char
 parseChar =
-  getState ==> \initState ->
+  getState >>= \initState ->
   case (string initState) of
     [] -> bail "no more input"
     (c:str) ->
-        putState newState ==> \_ ->
+        putState newState >>= \_ ->
         identity c
         where newState = initState { string = str, offset = newOffset }
               newOffset = offset initState + 1
@@ -72,9 +72,9 @@ peekChar = (firstChar . string) `liftM` getState
         firstChar [] = Nothing
 
 parseWhile :: (Char -> Bool) -> Parse String
-parseWhile p = (fmap p `liftM` peekChar) ==> \mp ->
+parseWhile p = (fmap p `liftM` peekChar) >>= \mp ->
   if mp == Just True
-     then parseChar ==>
+     then parseChar >>=
           \c -> (c:) <$> parseWhile p
   else identity []
 
@@ -84,7 +84,7 @@ assert False err = bail err
 
 
 skipCharIfItExists :: Parse ()
-skipCharIfItExists = peekChar ==>
+skipCharIfItExists = peekChar >>=
                       \maybeChar -> case maybeChar of Just char -> skipChar
                                                       Nothing -> identity ()
                                     where skipChar = parseChar >> identity ()

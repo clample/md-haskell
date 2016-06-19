@@ -67,12 +67,12 @@ parseChar =
               newOffset = offset initState + 1
 
 peekChar :: Parse (Maybe Char)
-peekChar = (firstChar . string) <$> getState
+peekChar = (firstChar . string) `liftM` getState
   where firstChar (c:str) = Just c
         firstChar [] = Nothing
 
 parseWhile :: (Char -> Bool) -> Parse String
-parseWhile p = (fmap p <$> peekChar) ==> \mp ->
+parseWhile p = (fmap p `liftM` peekChar) ==> \mp ->
   if mp == Just True
      then parseChar ==>
           \c -> (c:) <$> parseWhile p
@@ -87,11 +87,8 @@ skipCharIfItExists :: Parse ()
 skipCharIfItExists = peekChar ==>
                       \maybeChar -> case maybeChar of Just char -> skipChar
                                                       Nothing -> identity ()
-                                    where skipChar = parseChar ==>& identity ()
-
-(==>&) :: Parse a -> Parse b -> Parse b
-p ==>& f = p ==> \_ -> f
+                                    where skipChar = parseChar >> identity ()
 
 skipSpaces :: Parse ()
-skipSpaces = parseWhile isSpace ==>& identity ()
+skipSpaces = parseWhile isSpace >> identity ()
 

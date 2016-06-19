@@ -9,30 +9,30 @@ import ParseUtil
 
 parseHeader :: Parse Html
 parseHeader = ((length) <$> (parseWhile (\c -> c == '#'))) ==>
-              \ordinal -> skipSpaces ==>&
+              \ordinal -> skipSpaces >>
               parseWhile (\c -> c /= '\n') ==>
-              \txt -> skipCharIfItExists ==>&
+              \txt -> skipCharIfItExists >>
               identity (Node (hTag ordinal) ((Content { render = txt }):[]))
 
 parseLink :: Parse Html
-parseLink = skipBracket ==>&
+parseLink = skipBracket >>
             parseWhile (\c -> c /= ']') ==>
-            \linkText -> skipBracket ==>&
-            skipParenthesis ==>&
+            \linkText -> skipBracket >>
+            skipParenthesis >>
             parseWhile (\c -> c /= ')') ==>
-            \linkUrl -> skipParenthesis ==>&
+            \linkUrl -> skipParenthesis >>
             identity (Node (aTag linkUrl) ((Content { render = linkText }):[]))
             where skipBracket = parseChar
                   skipParenthesis = parseChar
 
 parseImage :: Parse Html
-parseImage = skipExclamation ==>&
-             skipBracket ==>&
+parseImage = skipExclamation >>
+             skipBracket >>
              parseWhile (\c -> c /= ']') ==>
-             \altText -> skipBracket ==>&
-             skipParenthesis ==>&
+             \altText -> skipBracket >>
+             skipParenthesis >>
              parseWhile (\c -> c /= ')') ==>
-             \imgUrl -> skipParenthesis ==>&
+             \imgUrl -> skipParenthesis >>
              identity ((imgContent altText imgUrl))
              where skipExclamation = parseChar
                    skipParenthesis = parseChar
@@ -49,10 +49,10 @@ parseUnorderedList = peekChar ==>
                                  
 
 parseUnorderedListElement :: Parse Html
-parseUnorderedListElement = skipSpecialChar ==>&
-                            skipSpace ==>&
+parseUnorderedListElement = skipSpecialChar >>
+                            skipSpace >>
                             parseWhile (\c -> c /= '\n') ==>
-                            \content -> skipNewline ==>&
+                            \content -> skipNewline >>
                             identity (Node liTag ((Content {render = content}):[]) )
                             where skipSpecialChar = parseChar
                                   skipSpace = parseChar
@@ -60,10 +60,10 @@ parseUnorderedListElement = skipSpecialChar ==>&
 
 parseParagraph :: Parse Html
 parseParagraph = parseWhile (\c -> c /= '\n') ==>
-                 \content -> skipCharIfItExists ==>&
+                 \content -> skipCharIfItExists >>
                  peekChar ==>
                  \maybeChar -> case maybeChar of
-                               Just '\n' -> skipCharIfItExists ==>&
+                               Just '\n' -> skipCharIfItExists >>
                                             identity (Node pTag ((Content {render = content }):[]))
                                Just _ -> parseParagraph ==>
                                          \(Node tag ((contentTag):contentTags)) -> identity (Node pTag ((Content { render = (content ++ "<br>" ++ (render contentTag)) }):[]))

@@ -5,15 +5,15 @@ import Data.Int
 import Html
 import Data.Char (isSpace)
 import ParseUtil
-
+import Control.Monad.Trans.Class
 
 parseHeader :: Parse Html
 parseHeader = ((length) <$> (parseWhile (\c -> c == '#'))) >>=
               \ordinal -> skipSpaces >>
-              parseWhile (\c -> c /= '\n') >>=
-              \txt -> skipCharIfItExists >>
-              identity (Node (hTag ordinal) ((Content { render = txt }):[]))
-
+              parseInline >>=
+              \inlineHtml -> skipCharIfItExists >>
+              identity (Node (hTag ordinal) (inlineHtml:[]))
+{--
 parseLink :: Parse Html
 parseLink = skipBracket >>
             parseWhile (\c -> c /= ']') >>=
@@ -24,7 +24,26 @@ parseLink = skipBracket >>
             identity (Node (aTag linkUrl) ((Content { render = linkText }):[]))
             where skipBracket = parseChar
                   skipParenthesis = parseChar
+--}
 
+
+parseLinkWithFailure :: MaybeT Parse Html
+parseLinkWithFailure = lift getState >>=
+                       \initState -> parseOrFail '[' initState >>
+                       lift (parseWhile (\c -> c /= '\n' && c /= ']')) >>=
+                       \linkText -> parseOrFail ']' initState >>
+                       parseOrFail '(' initState >>
+                       lift (parseWhile (\c -> c /= '\n' && c /= ')')) >>=
+                       \linkUrl -> parseOrFail ')' initState >>
+                       (return (Node (aTag linkUrl) ((Content {render = linkText}):[])))
+                       where parseOrFail char initState = (lift peekChar) >>=
+                                                \mc -> case mc of
+                                                       Just c -> if c == char
+                                                                 then (lift parseChar)
+                                                                 else fail ""
+                                                       Nothing -> lift (putState initState) >>
+                                                                  fail ""
+                             
 parseImage :: Parse Html
 parseImage = skipExclamation >>
              skipBracket >>
@@ -69,13 +88,31 @@ parseParagraph = parseWhile (\c -> c /= '\n') >>=
                                          \(Node tag ((contentTag):contentTags)) -> identity (Node pTag ((Content { render = (content ++ "<br>" ++ (render contentTag)) }):[]))
                                Nothing -> identity (Node pTag ((Content { render = content }):[]))
 
+parseInline :: Parse Html
+parseInline = parseWhile (\c -> not (c `elem` dispatch)) >>=
+              \content -> peekChar >>=
+              \maybeChar -> case maybeChar of
+                            Nothing -> return (Content {render = content})
+                            Just '\n' -> return (Content {render = content})
+                            Just '[' -> runMaybeT parseLinkWithFailure >>=
+                                        \maybeLink -> case maybeLink of
+                                                      Just html -> parseInline >>=
+                                                                   \h -> return (Node (Tag {renderOpen = "", renderClose = ""}) ((Content {render = content}):html:h:[]))
+                                                      Nothing -> parseChar >>=
+                                                                 \c -> parseInline >>=
+                                                                 \html -> return (Node (Tag {renderOpen = "", renderClose = "" }) ((Content {render = content ++ [c]}):html:[]))
+                            Just _ -> fail "Did you match the case of the dispatched character in parseInline?"
+              where dispatch = '[':'\n':[]
+
 parseMarkdown :: Parse Html
 parseMarkdown = peekChar >>=
                 \maybeChar -> case maybeChar of
                               Nothing -> identity (Content {render = ""})
                               Just char -> dispatchToParser char >>=
                                            \htmlBlock -> parseMarkdown >>=
-                                           \(Node tag html) -> identity (Node (Tag {renderOpen="", renderClose=""}) (htmlBlock:html))
+                                           \html -> case html of
+                                                    (Node tag h) -> return (Node (Tag {renderOpen="", renderClose=""}) (htmlBlock:h))
+                                                    content -> return (Node (Tag {renderOpen="", renderClose=""}) (htmlBlock:content:[]))
                              
 
 dispatchToParser :: Char -> Parse Html
@@ -88,3 +125,4 @@ parseAndRenderHtml :: Parse Html -> (String -> String)
 parseAndRenderHtml parseHtml = render . parse parseHtml
   where render (Right html) = renderHtml html
         render (Left err) = err
+

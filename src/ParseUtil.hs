@@ -4,7 +4,7 @@ import Data.List
 import Data.Int
 import Data.Char (isSpace)
 import Control.Monad
-import Control.Monad.Trans
+import Control.Monad.Trans.Class
 
 data ParseState = ParseState {
                                string :: String
@@ -89,6 +89,7 @@ putState s = Parse (\_ -> Right ((), s))
 bail :: String -> Parse a
 bail err = Parse $ \s -> Left $ "byte offset " ++ show (offset s) ++ ": " ++ err
 
+-- Make this a MaybeT (Parse Char)?
 parseChar :: Parse Char
 parseChar =
   getState >>= \initState ->

@@ -33,8 +33,8 @@ tests = [
   ]
 
 parseLinkTest = ( assertEqual "Parse valid link"
-                  ( "<a href=\"https://google.com\">Google</a>" )
-                  ( parseAndRenderHtml parseLink "[Google](https://google.com)" ))
+                  ( "<p><a href=\"https://google.com\">Google</a></p>" )
+                  ( parseAndRenderHtml parseMarkdown "[Google](https://google.com)" ))
 
 parseHeaderTest = ( assertEqual "Parse valid header"
                     ( "<h1>header</h1>" )

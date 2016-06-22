@@ -12,19 +12,7 @@ parseHeader = ((length) <$> (parseWhile (\c -> c == '#'))) >>=
               \ordinal -> skipSpaces >>
               parseInline >>=
               \inlineHtml -> skipCharIfItExists >>
-              identity (Node (hTag ordinal) (inlineHtml:[]))
-{--
-parseLink :: Parse Html
-parseLink = skipBracket >>
-            parseWhile (\c -> c /= ']') >>=
-            \linkText -> skipBracket >>
-            skipParenthesis >>
-            parseWhile (\c -> c /= ')') >>=
-            \linkUrl -> skipParenthesis >>
-            identity (Node (aTag linkUrl) ((Content { render = linkText }):[]))
-            where skipBracket = parseChar
-                  skipParenthesis = parseChar
---}
+              return (Node (hTag ordinal) (inlineHtml:[]))
 
 
 parseLinkWithFailure :: MaybeT Parse Html
@@ -52,7 +40,7 @@ parseImage = skipExclamation >>
              skipParenthesis >>
              parseWhile (\c -> c /= ')') >>=
              \imgUrl -> skipParenthesis >>
-             identity ((imgContent altText imgUrl))
+             return ((imgContent altText imgUrl))
              where skipExclamation = parseChar
                    skipParenthesis = parseChar
                    skipBracket = parseChar
@@ -62,9 +50,9 @@ parseUnorderedList = peekChar >>=
                      \maybeChar -> case maybeChar of
                                    Just '*' -> parseUnorderedListElement >>=
                                                \li -> parseUnorderedList >>=
-                                               \(Node tag ul) -> identity (Node ulTag (li:ul))
-                                   Just _ -> identity (Node ulTag [])
-                                   Nothing -> identity (Node ulTag [])
+                                               \(Node tag ul) -> return (Node ulTag (li:ul))
+                                   Just _ -> return (Node ulTag [])
+                                   Nothing -> return (Node ulTag [])
                                  
 
 parseUnorderedListElement :: Parse Html
@@ -72,22 +60,24 @@ parseUnorderedListElement = skipSpecialChar >>
                             skipSpace >>
                             parseInline >>=
                             \html -> skipNewline >>
-                            identity (Node liTag (html:[]) )
+                            return (Node liTag (html:[]) )
                             where skipSpecialChar = parseChar
                                   skipSpace = parseChar
                                   skipNewline = skipCharIfItExists
 
 parseParagraph :: Parse Html
-parseParagraph = parseInline >>=
-                 \html -> skipCharIfItExists >>
-                 peekChar >>=
-                 \maybeChar -> case maybeChar of
-                               Just '\n' -> skipCharIfItExists >>
-                                            identity (Node pTag (html:[]))
-                               Just _ -> parseParagraph >>=
-                                         \(Node tag ((contentTag):contentTags)) -> identity (Node pTag (html:(Content { render = ("<br>" ++ (render contentTag)) }):[]))
-                               Nothing -> identity (Node pTag (html:[]))
-
+parseParagraph = parseParagraphContent >>=
+                 \htmlArr -> return (Node pTag htmlArr)
+                 where parseParagraphContent = parseInline >>=
+                                               \html -> skipCharIfItExists >>
+                                               peekChar >>=
+                                               \maybeChar -> case maybeChar of
+                                                             Just '\n' -> skipCharIfItExists >>
+                                                                          return (html:[])
+                                                             Just _ -> parseParagraphContent >>=
+                                                                       \moreHtml -> return (html:(Content {render = "<br>"}):moreHtml)
+                                                             Nothing -> return (html:[])
+                                                                    
 parseInline :: Parse Html
 parseInline = parseWhile (\c -> not (c `elem` dispatch)) >>=
               \content -> peekChar >>=
@@ -97,10 +87,10 @@ parseInline = parseWhile (\c -> not (c `elem` dispatch)) >>=
                             Just '[' -> runMaybeT parseLinkWithFailure >>=
                                         \maybeLink -> case maybeLink of
                                                       Just html -> parseInline >>=
-                                                                   \h -> return (Node (Tag {renderOpen = "", renderClose = ""}) ((Content {render = content}):html:h:[]))
+                                                                   \h -> return (HtmlArr ((Content {render = content}):html:h:[]))
                                                       Nothing -> parseChar >>=
                                                                  \c -> parseInline >>=
-                                                                 \html -> return (Node (Tag {renderOpen = "", renderClose = "" }) ((Content {render = content ++ [c]}):html:[]))
+                                                                 \html -> return (HtmlArr ((Content {render = content ++ [c]}):html:[]))
                             Just _ -> fail "Did you match the case of the dispatched character in parseInline?"
               where dispatch = '[':'\n':[]
 
@@ -111,19 +101,15 @@ parseMarkdown = peekChar >>=
                               Just char -> dispatchToParser char >>=
                                            \htmlBlock -> parseMarkdown >>=
                                            \html -> case html of
-                                                    (Node tag h) -> return (Node (Tag {renderOpen="", renderClose=""}) (htmlBlock:h))
-                                                    content -> return (Node (Tag {renderOpen="", renderClose=""}) (htmlBlock:content:[]))
+                                                    (Node tag h) -> return (HtmlArr (htmlBlock:h))
+                                                    content -> return (HtmlArr (htmlBlock:content:[]))
                              
 
 dispatchToParser :: Char -> Parse Html
-dispatchToParser '#' = parseHeader >>=
-                       \headerTag -> identity (headerTag)
-
-dispatchToParser '*' = parseUnorderedList >>=
-                       \unorderedList -> return (unorderedList)
-
-dispatchToParser _ = parseParagraph >>=
-                     \paragraphTag -> identity (paragraphTag)
+dispatchToParser '#' = parseHeader
+dispatchToParser '*' = parseUnorderedList
+dispatchToParser _ = parseParagraph 
+                     
 
 parseAndRenderHtml :: Parse Html -> (String -> String)
 parseAndRenderHtml parseHtml = render . parse parseHtml

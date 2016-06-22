@@ -97,7 +97,7 @@ parseChar =
     [] -> bail "no more input"
     (c:str) ->
         putState newState >>= \_ ->
-        identity c
+        return c
         where newState = initState { string = str, offset = newOffset }
               newOffset = offset initState + 1
 
@@ -111,19 +111,19 @@ parseWhile p = (fmap p `liftM` peekChar) >>= \mp ->
   if mp == Just True
      then parseChar >>=
           \c -> (c:) <$> parseWhile p
-  else identity []
+  else return []
 
 assert :: Bool -> String -> Parse ()
-assert True _ = identity ()
+assert True _ = return ()
 assert False err = bail err
 
 
 skipCharIfItExists :: Parse ()
 skipCharIfItExists = peekChar >>=
                       \maybeChar -> case maybeChar of Just char -> skipChar
-                                                      Nothing -> identity ()
-                                    where skipChar = parseChar >> identity ()
+                                                      Nothing -> return ()
+                                    where skipChar = parseChar >> return ()
 
 skipSpaces :: Parse ()
-skipSpaces = parseWhile isSpace >> identity ()
+skipSpaces = parseWhile isSpace >> return ()
 

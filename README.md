@@ -35,7 +35,7 @@ Results in
 <li>List element 1</li>
 <li>List element 2</li>
 </ul>
-
+```
 ## Paragraphs
 To create a paragraph tag, start text on it's own line. You can insert a `<br>` tag by including a single newline:
 ```

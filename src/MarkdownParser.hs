@@ -70,23 +70,23 @@ parseUnorderedList = peekChar >>=
 parseUnorderedListElement :: Parse Html
 parseUnorderedListElement = skipSpecialChar >>
                             skipSpace >>
-                            parseWhile (\c -> c /= '\n') >>=
-                            \content -> skipNewline >>
-                            identity (Node liTag ((Content {render = content}):[]) )
+                            parseInline >>=
+                            \html -> skipNewline >>
+                            identity (Node liTag (html:[]) )
                             where skipSpecialChar = parseChar
                                   skipSpace = parseChar
                                   skipNewline = skipCharIfItExists
 
 parseParagraph :: Parse Html
-parseParagraph = parseWhile (\c -> c /= '\n') >>=
-                 \content -> skipCharIfItExists >>
+parseParagraph = parseInline >>=
+                 \html -> skipCharIfItExists >>
                  peekChar >>=
                  \maybeChar -> case maybeChar of
                                Just '\n' -> skipCharIfItExists >>
-                                            identity (Node pTag ((Content {render = content }):[]))
+                                            identity (Node pTag (html:[]))
                                Just _ -> parseParagraph >>=
-                                         \(Node tag ((contentTag):contentTags)) -> identity (Node pTag ((Content { render = (content ++ "<br>" ++ (render contentTag)) }):[]))
-                               Nothing -> identity (Node pTag ((Content { render = content }):[]))
+                                         \(Node tag ((contentTag):contentTags)) -> identity (Node pTag (html:(Content { render = ("<br>" ++ (render contentTag)) }):[]))
+                               Nothing -> identity (Node pTag (html:[]))
 
 parseInline :: Parse Html
 parseInline = parseWhile (\c -> not (c `elem` dispatch)) >>=
@@ -118,6 +118,10 @@ parseMarkdown = peekChar >>=
 dispatchToParser :: Char -> Parse Html
 dispatchToParser '#' = parseHeader >>=
                        \headerTag -> identity (headerTag)
+
+dispatchToParser '*' = parseUnorderedList >>=
+                       \unorderedList -> return (unorderedList)
+
 dispatchToParser _ = parseParagraph >>=
                      \paragraphTag -> identity (paragraphTag)
 

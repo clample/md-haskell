@@ -70,7 +70,7 @@ parseHeaderWithLinkTest = ( assertEqual "Parse Header with link"
 
 
 parseUnorderedListWithLinksTest = ( assertEqual "Parse unordered list with links"
-                                    ( "<ul><li><a href=\"https://clample.com\">Google</a></li>Other content<li></li><ul>")
+                                    ( "<ul><li><a href=\"https://clample.com\">Google</a></li><li>Other content</li></ul>")
                                     ( parseAndRenderHtml parseMarkdown
                                       "* [Google](https://clample.com)\n* Other content"))
 

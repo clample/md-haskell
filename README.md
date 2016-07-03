@@ -6,7 +6,7 @@ A markdown to html parser written in Haskell.
 You can build this project with Stack by running `stack build`
 
 You can parse a markdown file to an html file by running:
-`stack exec md-haskell-exe path/to/input.md path/to/output.html`
+```stack exec md-haskell-exe path/to/input.md path/to/output.html```
 
 #Features:
 
@@ -19,7 +19,7 @@ Currently parses:
 
 ## Header tags
 You can create header tags by starting a newline with `#` signs. The number of `#` signs gives the header level.
-ex:
+ex:  
 `# Header1` results in `<h1>Header1</h1>`
 `# Header2` results in `<h2>Header2</h2>`
 

@@ -6,7 +6,9 @@ A markdown to html parser written in Haskell.
 You can build this project with Stack by running `stack build`
 
 You can parse a markdown file to an html file by running:
-```stack exec md-haskell-exe path/to/input.md path/to/output.html```
+```
+stack exec md-haskell-exe path/to/input.md path/to/output.html
+```
 
 #Features:
 
